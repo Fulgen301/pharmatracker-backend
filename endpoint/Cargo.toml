@@ -1,0 +1,22 @@
+[package]
+name = "endpoint"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow.workspace = true
+axum.workspace = true
+entity = { path = "../entity" }
+migration = { path = "../migration" }
+hyper = { version = "1.0", features = [] }
+hyper-util = { version = "0.1", features = ["tokio", "server-auto", "http1"] }
+serde = { version = "1.0.193", features = ["derive"] }
+serde_json = "1.0.108"
+service = { path = "../service" }
+tokio.workspace = true
+tower = { version = "0.4", features = ["util"] }
+tower-http = { version = "0.5", features = ["timeout", "trace"] }
+tracing.workspace = true
