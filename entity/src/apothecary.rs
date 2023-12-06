@@ -3,8 +3,8 @@ use sea_orm::entity::prelude::*;
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "apothecary")]
 pub struct Model {
-    #[sea_orm(primary_key)]
-    pub id: i32,
+    #[sea_orm(primary_key, auto_increment = false)]
+    pub id: Uuid,
     pub name: String,
     pub address: String,
     pub post_code: i32,
