@@ -1,11 +1,17 @@
 use sea_orm::entity::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
-#[sea_orm(rs_type = "String", db_type = "Enum", enum_name = "user_type")]
+#[sea_orm(
+    rs_type = "String",
+    db_type = "String(Some(1))",
+    enum_name = "user_type"
+)]
 pub enum UserType {
-    #[sea_orm(string_value = "apothecary")]
+    #[sea_orm(string_value = "s")]
+    Admin,
+    #[sea_orm(string_value = "a")]
     Apothecary,
-    #[sea_orm(string_value = "user")]
+    #[sea_orm(string_value = "u")]
     User,
 }
 
@@ -15,7 +21,10 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub name: String,
-    pub age: i32,
+    #[sea_orm(unique)]
+    pub email: String,
+    pub password: String,
+    pub user_type: UserType,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]

@@ -1,5 +1,13 @@
+use argon2::{
+    password_hash::{rand_core::OsRng, SaltString},
+    Argon2, PasswordHasher,
+};
 use entity::{apothecary, apothecary_user, user};
-use sea_orm_migration::{prelude::*, sea_orm::Schema};
+use sea_orm_migration::{
+    prelude::*,
+    sea_orm::{ActiveModelTrait, Schema, Set},
+};
+use uuid::Uuid;
 
 #[derive(DeriveMigrationName)]
 pub struct Migration;
@@ -25,6 +33,13 @@ macro_rules! drop_table_from_entity {
     };
 }
 
+fn hash_password(password: &str) -> Result<String, argon2::password_hash::Error> {
+    let salt = SaltString::generate(&mut OsRng);
+    let argon2 = Argon2::default();
+    let hash = argon2.hash_password(password.as_bytes(), &salt)?;
+    Ok(hash.to_string())
+}
+
 #[async_trait::async_trait]
 impl MigrationTrait for Migration {
     async fn up(&self, manager: &SchemaManager) -> Result<(), DbErr> {
@@ -34,6 +49,18 @@ impl MigrationTrait for Migration {
         create_table_from_entity!(manager, schema, user);
         create_table_from_entity!(manager, schema, apothecary);
         create_table_from_entity!(manager, schema, apothecary_user);
+
+        let db: &SchemaManagerConnection<'_> = manager.get_connection();
+
+        user::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            name: Set("Admin".to_owned()),
+            email: Set("admin@email.com".to_owned()),
+            password: Set(hash_password("password").map_err(|e| DbErr::Migration(e.to_string()))?),
+            user_type: Set(user::UserType::Admin),
+        }
+        .insert(db)
+        .await?;
 
         Ok(())
     }

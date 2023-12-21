@@ -1,5 +1,9 @@
 use appstate::AppState;
-use axum::{extract::Request, routing::get, Router};
+use axum::{
+    extract::Request,
+    routing::{get, post},
+    Router,
+};
 use hyper::body::Incoming;
 use hyper_util::rt::TokioIo;
 use migration::{Migrator, MigratorTrait};
@@ -11,8 +15,9 @@ use tower_http::trace::TraceLayer;
 use tracing::{debug, info};
 
 mod appstate;
-mod dto;
+mod auth;
 mod heartbeat;
+mod user;
 
 async fn migrate(db: &entity::DatabaseConnection, drop_all: bool) -> Result<(), migration::DbErr> {
     if drop_all {
@@ -22,28 +27,36 @@ async fn migrate(db: &entity::DatabaseConnection, drop_all: bool) -> Result<(), 
     }
 }
 
-pub async fn run(close_rx: watch::Receiver<()>) -> anyhow::Result<()> {
-    let db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL is not set in .env file");
-    let host = std::env::var("HOST").expect("HOST is not set in .env file");
-    let port = std::env::var("PORT").expect("PORT is not set in .env file");
-    let server_url = format!("{host}:{port}");
-
-    let appstate = AppState::new(entity::create_database_connection(db_url).await?);
-
-    migrate(appstate.conn(), true).await?;
-
-    let app = Router::new()
+fn create_router(appstate: AppState) -> Router {
+    Router::new()
         .nest(
             "/api/v1",
-            Router::new().route("/heartbeat", get(heartbeat::get)),
+            Router::new()
+                .route("/heartbeat", get(heartbeat::get))
+                .route("/login", post(user::login))
+                .route("/register", post(user::register)),
         )
         .layer((
             TraceLayer::new_for_http(),
             TimeoutLayer::new(std::time::Duration::from_secs(10)),
         ))
-        .with_state(appstate);
+        .with_state(appstate)
+}
 
-    let listener = TcpListener::bind(&server_url).await?;
+pub async fn run(close_rx: watch::Receiver<()>) -> anyhow::Result<()> {
+    let settings = settings::Settings::new("config")?;
+    let db: migration::sea_orm::prelude::DatabaseConnection =
+        entity::create_database_connection(&settings.database.url).await?;
+
+    let server_url = format!("{}:{}", settings.endpoint.host, settings.endpoint.port);
+
+    let appstate = AppState::new(settings, db)?;
+
+    migrate(&appstate.conn, true).await?;
+
+    let app = create_router(appstate);
+
+    let listener = TcpListener::bind(server_url).await?;
 
     let (task_close_tx, task_close_rx) = watch::channel(());
 

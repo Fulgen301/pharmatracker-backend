@@ -5,8 +5,11 @@ edition = "2021"
 publish = false
 
 [dependencies]
-async-std = { version = "1", features = ["attributes", "tokio1"] }
+anyhow.workspace = true
+argon2.workspace = true
 entity = { path = "../entity" }
+tokio.workspace = true
+uuid.workspace = true
 
 [dependencies.sea-orm-migration]
 version = "0.12.0"

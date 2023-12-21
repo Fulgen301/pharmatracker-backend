@@ -5,4 +5,13 @@ edition = "2021"
 publish = false
 
 [dependencies]
+anyhow.workspace = true
+argon2.workspace = true
+dto = { path = "../dto" }
 entity = { path = "../entity" }
+jsonwebtoken.workspace = true
+sea-orm.workspace = true
+serde.workspace = true
+settings = { path = "../settings" }
+tracing.workspace = true
+uuid.workspace = true
