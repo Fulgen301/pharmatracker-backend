@@ -12,7 +12,6 @@ use tracing::debug;
 use uuid::Uuid;
 
 pub enum UserServiceError {
-    UserNotFound,
     InvalidCredentials,
     UserAlreadyExists,
     Anyhow(anyhow::Error),
@@ -33,7 +32,6 @@ impl From<anyhow::Error> for UserServiceError {
 impl Display for UserServiceError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            UserServiceError::UserNotFound => write!(f, "User not found"),
             UserServiceError::InvalidCredentials => write!(f, "Invalid credentials"),
             UserServiceError::UserAlreadyExists => write!(f, "User already exists"),
             UserServiceError::Anyhow(e) => write!(f, "{}", e),

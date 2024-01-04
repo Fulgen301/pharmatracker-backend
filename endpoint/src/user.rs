@@ -18,7 +18,6 @@ fn handle_user_service_error(error: UserServiceError) -> Response {
         UserServiceError::InvalidCredentials => {
             (axum::http::StatusCode::UNAUTHORIZED, error.to_string())
         }
-        UserServiceError::UserNotFound => (axum::http::StatusCode::NOT_FOUND, error.to_string()),
         UserServiceError::UserAlreadyExists => {
             (axum::http::StatusCode::CONFLICT, error.to_string())
         }
