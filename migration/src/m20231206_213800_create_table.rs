@@ -62,6 +62,20 @@ impl MigrationTrait for Migration {
         .insert(db)
         .await?;
 
+        apothecary::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            name: Set("St. Rudolf".to_owned()),
+            longitude: Set(16.3181194),
+            latitude: Set(48.1942566),
+            street: Set("Goldschlagstraße".to_owned()),
+            number: Set("105".to_owned()),
+            post_code: Set(1150),
+            city: Set("Wien".to_owned()),
+            country: Set("AT".to_owned()),
+        }
+        .insert(db)
+        .await?;
+
         Ok(())
     }
 

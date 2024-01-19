@@ -14,9 +14,11 @@ use tower_http::timeout::TimeoutLayer;
 use tower_http::trace::TraceLayer;
 use tracing::{debug, info};
 
+mod apothecary;
 mod appstate;
 mod auth;
 mod heartbeat;
+mod reservation;
 mod user;
 
 async fn migrate(db: &entity::DatabaseConnection, drop_all: bool) -> Result<(), migration::DbErr> {
@@ -34,7 +36,8 @@ fn create_router(appstate: AppState) -> Router {
             Router::new()
                 .route("/heartbeat", get(heartbeat::get))
                 .route("/login", post(user::login))
-                .route("/register", post(user::register)),
+                .route("/register", post(user::register))
+                .route("/apothecaries", get(apothecary::get)),
         )
         .layer((
             TraceLayer::new_for_http(),

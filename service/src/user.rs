@@ -92,7 +92,7 @@ impl UserService {
             name: Set(user_registration.name),
             email: Set(user_registration.email),
             password: Set(password_hash),
-            user_type: Set(entity::user::UserType::User),
+            user_type: Set(entity::user::UserType::Customer),
         }
         .insert(&self.db)
         .await

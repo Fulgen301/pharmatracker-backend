@@ -11,8 +11,8 @@ pub enum UserType {
     Admin,
     #[sea_orm(string_value = "a")]
     Apothecary,
-    #[sea_orm(string_value = "u")]
-    User,
+    #[sea_orm(string_value = "c")]
+    Customer,
 }
 
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
@@ -39,5 +39,20 @@ impl Related<super::apothecary::Entity> for Entity {
 
     fn via() -> Option<RelationDef> {
         Some(super::apothecary_user::Relation::User.def())
+    }
+}
+
+impl From<Model> for dto::user::User {
+    fn from(user: Model) -> Self {
+        Self {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            user_type: match user.user_type {
+                UserType::Admin => dto::user::UserType::Admin,
+                UserType::Apothecary => dto::user::UserType::Apothecary,
+                UserType::Customer => dto::user::UserType::Customer,
+            },
+        }
     }
 }

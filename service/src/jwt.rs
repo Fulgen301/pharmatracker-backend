@@ -37,7 +37,7 @@ impl Display for TokenError {
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
 pub enum Role {
-    User,
+    Customer,
     Apothecary,
     Admin,
 }
@@ -73,9 +73,11 @@ impl JwtService {
             sub: user.id.to_string(),
             exp: 2000000000,
             roles: match user.user_type {
-                entity::user::UserType::Admin => vec![Role::User, Role::Apothecary, Role::Admin],
-                entity::user::UserType::User => vec![Role::User],
-                entity::user::UserType::Apothecary => vec![Role::User],
+                entity::user::UserType::Admin => {
+                    vec![Role::Customer, Role::Apothecary, Role::Admin]
+                }
+                entity::user::UserType::Customer => vec![Role::Customer],
+                entity::user::UserType::Apothecary => vec![Role::Apothecary],
             },
         };
 
