@@ -8,6 +8,7 @@ publish = false
 anyhow.workspace = true
 argon2.workspace = true
 entity = { path = "../entity" }
+rust_decimal.workspace = true
 tokio.workspace = true
 uuid.workspace = true
 

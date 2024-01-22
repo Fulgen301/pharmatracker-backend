@@ -1,10 +1,15 @@
 use axum::{
-    extract::State,
+    extract::{Query, State},
     http::StatusCode,
     response::{ErrorResponse, IntoResponse, Response},
     Json,
 };
-use dto::{apothecary::ApothecaryDetail, error::RestError, page::Page};
+use dto::{
+    apothecary::ApothecaryDetail,
+    error::RestError,
+    medication::{MedicationSearch, MedicationSearchResultList},
+    page::Page,
+};
 use service::apothecary::ApothecaryServiceError;
 
 use crate::appstate::AppState;
@@ -33,4 +38,17 @@ pub async fn get(
             .map_err(handle_apothecary_service_error)?
             .into(),
     ))
+}
+
+pub async fn get_medications(
+    State(ref state): State<AppState>,
+    Query(search_dto): Query<MedicationSearch>,
+) -> Result<Json<Vec<MedicationSearchResultList>>, ErrorResponse> {
+    let result = state
+        .apothecary_service
+        .get_medications(search_dto)
+        .await
+        .map_err(handle_apothecary_service_error)?;
+
+    Ok(Json(result))
 }

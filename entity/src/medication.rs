@@ -18,3 +18,12 @@ impl Related<super::apothecary::Entity> for Entity {
         super::apothecary_user::Relation::Apothecary.def()
     }
 }
+
+impl From<Model> for dto::medication::MedicationDetail {
+    fn from(medication: Model) -> Self {
+        Self {
+            id: medication.id,
+            name: medication.name,
+        }
+    }
+}

@@ -2,7 +2,8 @@ use argon2::{
     password_hash::{rand_core::OsRng, SaltString},
     Argon2, PasswordHasher,
 };
-use entity::{apothecary, apothecary_user, user};
+use entity::{apothecary, apothecary_medication, apothecary_user, medication, user};
+use rust_decimal::Decimal;
 use sea_orm_migration::{
     prelude::*,
     sea_orm::{ActiveModelTrait, Schema, Set},
@@ -49,6 +50,8 @@ impl MigrationTrait for Migration {
         create_table_from_entity!(manager, schema, user);
         create_table_from_entity!(manager, schema, apothecary);
         create_table_from_entity!(manager, schema, apothecary_user);
+        create_table_from_entity!(manager, schema, medication);
+        create_table_from_entity!(manager, schema, apothecary_medication);
 
         let db: &SchemaManagerConnection<'_> = manager.get_connection();
 
@@ -62,7 +65,7 @@ impl MigrationTrait for Migration {
         .insert(db)
         .await?;
 
-        apothecary::ActiveModel {
+        let apothecary_id = apothecary::ActiveModel {
             id: Set(Uuid::new_v4()),
             name: Set("St. Rudolf".to_owned()),
             longitude: Set(16.3181194),
@@ -74,12 +77,33 @@ impl MigrationTrait for Migration {
             country: Set("AT".to_owned()),
         }
         .insert(db)
+        .await?
+        .id;
+
+        let medication_id = medication::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            name: Set("Ibuprofen".to_owned()),
+        }
+        .insert(db)
+        .await?
+        .id;
+
+        apothecary_medication::ActiveModel {
+            apothecary_id: Set(apothecary_id),
+            medication_id: Set(medication_id),
+            medication_quantity_type: Set(apothecary_medication::QuantityType::Package),
+            medication_quantity: Set(Some(10)),
+            medication_price: Set(Decimal::new(1099, 2)),
+        }
+        .insert(db)
         .await?;
 
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        drop_table_from_entity!(manager, apothecary_medication);
+        drop_table_from_entity!(manager, medication);
         drop_table_from_entity!(manager, apothecary_user);
         drop_table_from_entity!(manager, apothecary);
         drop_table_from_entity!(manager, user);

@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use dto::medication::{MedicationQuantity, MedicationQuantityPackage, MedicationQuantityUnknown};
 use sea_orm::entity::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
@@ -27,12 +28,13 @@ impl Display for QuantityType {
 #[derive(Clone, Debug, PartialEq, Eq, DeriveEntityModel)]
 #[sea_orm(table_name = "apothecary_medication")]
 pub struct Model {
-    #[sea_orm(primary_key, auto_increment = false)]
-    pub id: Uuid,
+    #[sea_orm(primary_key)]
     pub apothecary_id: Uuid,
+    #[sea_orm(primary_key)]
     pub medication_id: Uuid,
     pub medication_quantity_type: QuantityType,
-    pub medication_quantity: Option<u64>,
+    pub medication_quantity: Option<i64>,
+    pub medication_price: Decimal,
 }
 
 #[derive(Copy, Clone, Debug, EnumIter, DeriveRelation)]
@@ -54,12 +56,19 @@ pub enum Relation {
 
 impl ActiveModelBehavior for ActiveModel {}
 
-impl From<ActiveModel> for dto::medication::MedicationSearchResult {
-    fn from(apothecary_medication: ActiveModel) -> Self {
-        Self {
-            quantity: apothecary_medication.medication_quantity,
-            aliases: vec![],
-            apothecary: apothecary_medication.apothecary_id,
+impl From<Model> for MedicationQuantity {
+    fn from(medication: Model) -> Self {
+        match medication.medication_quantity_type {
+            QuantityType::Package => Self::Package(MedicationQuantityPackage {
+                r#type: "package".to_string(),
+                quantity: medication
+                    .medication_quantity
+                    .expect("Package quantity is missing") as _,
+                price: medication.medication_price,
+            }),
+            QuantityType::Unknown => Self::Unknown(MedicationQuantityUnknown {
+                r#type: "unknown".to_string(),
+            }),
         }
     }
 }

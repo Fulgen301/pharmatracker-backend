@@ -9,9 +9,10 @@ members = [".", "dto", "endpoint", "entity", "migration", "settings", "service"]
 [workspace.dependencies]
 anyhow = { version = "1.0.75", features = ["backtrace"] }
 argon2 = { version = "0.5.2", features = ["std"] }
-axum = "0.7.1"
+axum = { version = "0.7.1", features = ["macros"] }
 dotenvy = "0.15.7"
 jsonwebtoken = "9.2.0"
+rust_decimal = "1.33.1"
 sea-orm = { version = "0.12.8", features = ["sqlx-postgres", "sqlx-sqlite", "runtime-tokio-rustls", "macros"] }
 serde = { version = "1.0.193", features = ["derive"] }
 serde_json = "1.0.108"

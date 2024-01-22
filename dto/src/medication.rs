@@ -1,3 +1,4 @@
+use rust_decimal::Decimal;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -32,12 +33,22 @@ pub struct MedicationQuantityLiquid {
 pub struct MedicationQuantityPackage {
     pub r#type: String,
     pub quantity: u64,
+    pub price: Decimal,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MedicationQuantityUnknown {
     pub r#type: String,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MedicationSearch {
+    pub name: String,
+    pub longitude: f32,
+    pub latitude: f32,
+    pub max_distance: u64,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
@@ -50,7 +61,7 @@ pub struct MedicationSearchResultList {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MedicationSearchResult {
-    pub quantity: Option<u64>,
+    pub quantity: MedicationQuantity,
     pub aliases: Vec<MedicationDetail>,
     pub apothecary: ApothecaryDetail,
 }
