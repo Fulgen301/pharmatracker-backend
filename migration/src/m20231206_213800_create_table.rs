@@ -3,15 +3,17 @@ use argon2::{
     Argon2, PasswordHasher,
 };
 use entity::{
-    apothecary, apothecary_medication, apothecary_schedule, apothecary_user, medication, schedule,
-    user,
+    apothecary, apothecary_medication, apothecary_schedule, apothecary_user, medication,
+    reservation, schedule, user,
 };
 use rust_decimal::Decimal;
 use sea_orm_migration::{
     prelude::*,
     sea_orm::{ActiveModelTrait, Schema, Set},
 };
-use time::{macros::format_description, Time, Weekday};
+use time::{
+    macros::format_description, Duration, OffsetDateTime, PrimitiveDateTime, Time, Weekday,
+};
 use uuid::Uuid;
 
 #[derive(DeriveMigrationName)]
@@ -58,10 +60,11 @@ impl MigrationTrait for Migration {
         create_table_from_entity!(manager, schema, apothecary_medication);
         create_table_from_entity!(manager, schema, schedule);
         create_table_from_entity!(manager, schema, apothecary_schedule);
+        create_table_from_entity!(manager, schema, reservation);
 
         let db: &SchemaManagerConnection<'_> = manager.get_connection();
 
-        user::ActiveModel {
+        let user_id = user::ActiveModel {
             id: Set(Uuid::new_v4()),
             name: Set("Admin".to_owned()),
             email: Set("admin@email.com".to_owned()),
@@ -69,7 +72,8 @@ impl MigrationTrait for Migration {
             user_type: Set(user::UserType::Admin),
         }
         .insert(db)
-        .await?;
+        .await?
+        .id;
 
         let apothecary_ids = [
             apothecary::ActiveModel {
@@ -174,10 +178,32 @@ impl MigrationTrait for Migration {
             i += 1;
         }
 
+        let now = OffsetDateTime::now_utc();
+        let now = PrimitiveDateTime::new(now.date(), now.time());
+        let end = now
+            .checked_add(Duration::minutes(30))
+            .ok_or(DbErr::Migration("Date out of range".to_owned()))?;
+
+        reservation::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            apothecary_id: Set(apothecary_ids[0]),
+            medication_id: Set(medication_id),
+            user_id: Set(user_id),
+            quantity_type: Set(apothecary_medication::QuantityType::Package),
+            quantity: Set(Some(1)),
+            price: Set(Decimal::new(1099, 2)),
+            status: Set(reservation::ReservationStatus::Active),
+            start_date_time: Set(Some(now)),
+            end_date_time: Set(Some(end)),
+        }
+        .insert(db)
+        .await?;
+
         Ok(())
     }
 
     async fn down(&self, manager: &SchemaManager) -> Result<(), DbErr> {
+        drop_table_from_entity!(manager, reservation);
         drop_table_from_entity!(manager, apothecary_schedule);
         drop_table_from_entity!(manager, schedule);
         drop_table_from_entity!(manager, apothecary_medication);

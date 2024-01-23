@@ -54,14 +54,11 @@ impl JwtService {
     }
 
     pub fn claims(&self, token: &str) -> Result<TokenClaims, TokenError> {
-        let validation = Validation::new(Algorithm::RS256);
+        let validation = Validation::new(Algorithm::HS256);
 
         Ok(jsonwebtoken::decode::<TokenClaims>(
             token,
-            &jsonwebtoken::DecodingKey::from_rsa_pem(
-                self.settings.jwt.access_token_public_key.as_bytes(),
-            )
-            .map_err(|e| TokenError::Jwt(e))?,
+            &jsonwebtoken::DecodingKey::from_secret(self.settings.jwt.secret.as_bytes()),
             &validation,
         )
         .map_err(|e| TokenError::Jwt(e))?
@@ -82,12 +79,9 @@ impl JwtService {
         };
 
         Ok(jsonwebtoken::encode(
-            &jsonwebtoken::Header::new(Algorithm::RS256),
+            &jsonwebtoken::Header::new(Algorithm::HS256),
             &claims,
-            &jsonwebtoken::EncodingKey::from_rsa_pem(
-                self.settings.jwt.access_token_private_key.as_bytes(),
-            )
-            .map_err(|e| TokenError::Jwt(e))?,
+            &jsonwebtoken::EncodingKey::from_secret(self.settings.jwt.secret.as_bytes()),
         )
         .map_err(|e| TokenError::Jwt(e))?)
     }

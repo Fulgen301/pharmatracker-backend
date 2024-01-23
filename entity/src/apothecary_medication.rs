@@ -3,7 +3,7 @@ use std::fmt::Display;
 use dto::medication::{MedicationQuantity, MedicationQuantityPackage, MedicationQuantityUnknown};
 use sea_orm::entity::prelude::*;
 
-#[derive(Debug, Clone, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumIter, DeriveActiveEnum)]
 #[sea_orm(
     rs_type = "String",
     db_type = "String(Some(1))",

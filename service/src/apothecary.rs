@@ -7,8 +7,8 @@ use dto::{
 };
 use sea_orm::{
     sea_query::{Expr, IntoCondition},
-    ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, JoinType, ModelTrait,
-    QueryFilter, QuerySelect, RelationTrait, RuntimeErr,
+    ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, JoinType, QueryFilter,
+    QuerySelect, RelationTrait, RuntimeErr,
 };
 
 pub use entity::apothecary::Model as Apothecary;

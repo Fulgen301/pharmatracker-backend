@@ -31,17 +31,15 @@ fn handle_apothecary_service_error(error: ApothecaryServiceError) -> Response {
 pub async fn get(
     State(ref state): State<AppState>,
 ) -> Result<Json<Page<ApothecaryDetail>>, ErrorResponse> {
-    Ok(Json(
-        state
-            .apothecary_service
-            .get(None)
-            .await
-            .map(|apothecary| {
-                apothecary.map(|p| ApothecaryDetail::from(ApothecaryWithSchedules::from(p)))
-            })
-            .map_err(handle_apothecary_service_error)?
-            .into(),
-    ))
+    let result = state
+        .apothecary_service
+        .get(None)
+        .await
+        .map_err(handle_apothecary_service_error)?
+        .map(|p| ApothecaryDetail::from(ApothecaryWithSchedules::from(p)))
+        .into();
+
+    Ok(Json(result))
 }
 
 pub async fn get_medications(

@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 use dto::page::{Pageable, PageableOptions, SortDirection};
 use sea_orm::{
@@ -25,6 +25,16 @@ pub enum PageError {
     InvalidColumnName(String),
     InvalidDirectionName,
     DbErr(DbErr),
+}
+
+impl Display for PageError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            PageError::InvalidColumnName(e) => write!(f, "Invalid column name: {}", e),
+            PageError::InvalidDirectionName => write!(f, "Invalid direction"),
+            PageError::DbErr(e) => write!(f, "{}", e),
+        }
+    }
 }
 
 impl From<DbErr> for PageError {
@@ -216,6 +226,23 @@ impl<T, U> Page<(T, Vec<U>)> {
                     empty: total_elements == 0,
                 })
             }
+        }
+    }
+}
+
+impl<T> From<Vec<T>> for Page<T> {
+    fn from(vec: Vec<T>) -> Self {
+        let (number_of_elements, empty) = (vec.len() as u64, vec.is_empty());
+        Self {
+            content: vec,
+            last: true,
+            total_elements: number_of_elements,
+            total_pages: 1,
+            size: number_of_elements,
+            number: 0,
+            first: true,
+            number_of_elements,
+            empty,
         }
     }
 }

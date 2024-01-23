@@ -3,6 +3,7 @@ pub mod apothecary_medication;
 pub mod apothecary_schedule;
 pub mod apothecary_user;
 pub mod medication;
+pub mod reservation;
 pub mod schedule;
 pub mod user;
 
