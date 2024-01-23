@@ -11,3 +11,4 @@ dto = { path = "../dto" }
 anyhow.workspace = true
 sea-orm.workspace = true
 uuid.workspace = true
+time.workspace = true

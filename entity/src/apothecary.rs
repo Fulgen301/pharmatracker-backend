@@ -26,7 +26,7 @@ impl Related<super::user::Entity> for Entity {
     }
 
     fn via() -> Option<RelationDef> {
-        Some(super::apothecary_user::Relation::Apothecary.def())
+        Some(super::apothecary_user::Relation::Apothecary.def().rev())
     }
 }
 
@@ -36,22 +36,46 @@ impl Related<super::medication::Entity> for Entity {
     }
 
     fn via() -> Option<RelationDef> {
-        Some(super::apothecary_medication::Relation::Apothecary.def())
+        Some(
+            super::apothecary_medication::Relation::Apothecary
+                .def()
+                .rev(),
+        )
     }
 }
 
-impl From<Model> for dto::apothecary::ApothecaryDetail {
-    fn from(apothecary: Model) -> Self {
+impl Related<super::schedule::Entity> for Entity {
+    fn to() -> RelationDef {
+        super::apothecary_schedule::Relation::Schedule.def()
+    }
+
+    fn via() -> Option<RelationDef> {
+        Some(super::apothecary_schedule::Relation::Apothecary.def().rev())
+    }
+}
+
+pub struct ApothecaryWithSchedules((Model, Vec<super::schedule::Model>));
+
+impl From<(Model, Vec<super::schedule::Model>)> for ApothecaryWithSchedules {
+    fn from((apothecary, schedule): (Model, Vec<super::schedule::Model>)) -> Self {
+        Self((apothecary, schedule))
+    }
+}
+
+impl From<ApothecaryWithSchedules> for dto::apothecary::ApothecaryDetail {
+    fn from(apothecary_with_schedules: ApothecaryWithSchedules) -> Self {
+        let (apothecary, schedule) = apothecary_with_schedules.0;
         Self {
             id: apothecary.id,
+            name: apothecary.name,
             longitude: apothecary.longitude,
             latitude: apothecary.latitude,
-            name: apothecary.name,
             street: apothecary.street,
             number: apothecary.number,
             post_code: apothecary.post_code,
             city: apothecary.city,
             country: apothecary.country,
+            schedules: schedule.into_iter().map(|s| s.into()).collect(),
         }
     }
 }

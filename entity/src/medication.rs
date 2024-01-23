@@ -15,7 +15,15 @@ impl ActiveModelBehavior for ActiveModel {}
 
 impl Related<super::apothecary::Entity> for Entity {
     fn to() -> RelationDef {
-        super::apothecary_user::Relation::Apothecary.def()
+        super::apothecary_medication::Relation::Apothecary.def()
+    }
+
+    fn via() -> Option<RelationDef> {
+        Some(
+            super::apothecary_medication::Relation::Medication
+                .def()
+                .rev(),
+        )
     }
 }
 

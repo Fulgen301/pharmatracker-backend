@@ -1,17 +1,22 @@
 use std::{collections::HashMap, fmt::Display};
 
+use anyhow::anyhow;
 use dto::{
     medication::{MedicationSearch, MedicationSearchResult, MedicationSearchResultList},
     page::Pageable,
 };
 use sea_orm::{
     sea_query::{Expr, IntoCondition},
-    ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, JoinType, QueryFilter,
-    QuerySelect, RelationTrait,
+    ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, JoinType, ModelTrait,
+    QueryFilter, QuerySelect, RelationTrait, RuntimeErr,
 };
 
 pub use entity::apothecary::Model as Apothecary;
-use entity::{apothecary::Entity, apothecary_medication};
+pub use entity::schedule::Model as Schedule;
+use entity::{
+    apothecary::{ApothecaryWithSchedules, Entity},
+    apothecary_medication,
+};
 use uuid::Uuid;
 
 use crate::page::{Page, PageError};
@@ -60,10 +65,14 @@ impl ApothecaryService {
     pub async fn get(
         &self,
         pageable: Option<Pageable>,
-    ) -> Result<Page<Apothecary>, ApothecaryServiceError> {
-        Page::<Apothecary>::paginate(&self.db, Entity::find(), pageable)
-            .await
-            .map_err(|e| e.into())
+    ) -> Result<Page<(Apothecary, Vec<Schedule>)>, ApothecaryServiceError> {
+        Page::<(Apothecary, Vec<Schedule>)>::paginate_two_many(
+            &self.db,
+            Entity::find().find_with_related(entity::schedule::Entity),
+            pageable,
+        )
+        .await
+        .map_err(|e| e.into())
     }
 
     pub async fn get_medications(
@@ -126,11 +135,19 @@ impl ApothecaryService {
             };
 
             for apothecary_medication in apothecary_medications {
-                let apothecary =
+                let apothecary_schedules =
                     entity::apothecary::Entity::find_by_id(apothecary_medication.apothecary_id)
-                        .one(&self.db)
-                        .await?
-                        .ok_or(ApothecaryServiceError::NotFound)?;
+                        .find_with_related(entity::schedule::Entity)
+                        .all(&self.db)
+                        .await?;
+
+                if apothecary_schedules.len() != 1 {
+                    return Err(ApothecaryServiceError::Anyhow(anyhow!(DbErr::Query(
+                        RuntimeErr::Internal("Too many apothecaries for one ID".to_owned())
+                    ))));
+                }
+
+                let apothecary = &apothecary_schedules.first().unwrap().0;
 
                 if (apothecary.longitude - search_dto.longitude).powf(2.0f32)
                     + (apothecary.latitude - search_dto.latitude).powf(2.0f32)
@@ -139,10 +156,13 @@ impl ApothecaryService {
                     continue;
                 }
 
+                let mut apothecary_schedules = apothecary_schedules;
+                let (apothecary, schedules) = apothecary_schedules.pop().unwrap();
+
                 let result = MedicationSearchResult {
                     quantity: apothecary_medication.into(),
                     aliases: vec![],
-                    apothecary: apothecary.into(),
+                    apothecary: ApothecaryWithSchedules::from((apothecary, schedules)).into(),
                 };
 
                 list.results.push(result);

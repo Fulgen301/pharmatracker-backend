@@ -61,7 +61,7 @@ impl JwtService {
             &jsonwebtoken::DecodingKey::from_rsa_pem(
                 self.settings.jwt.access_token_public_key.as_bytes(),
             )
-            .unwrap(),
+            .map_err(|e| TokenError::Jwt(e))?,
             &validation,
         )
         .map_err(|e| TokenError::Jwt(e))?
@@ -87,7 +87,7 @@ impl JwtService {
             &jsonwebtoken::EncodingKey::from_rsa_pem(
                 self.settings.jwt.access_token_private_key.as_bytes(),
             )
-            .unwrap(),
+            .map_err(|e| TokenError::Jwt(e))?,
         )
         .map_err(|e| TokenError::Jwt(e))?)
     }

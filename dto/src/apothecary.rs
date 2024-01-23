@@ -1,6 +1,8 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
+use crate::schedule::Schedule;
+
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct ApothecaryDetail {
@@ -13,4 +15,5 @@ pub struct ApothecaryDetail {
     pub post_code: i32,
     pub city: String,
     pub country: String,
+    pub schedules: Vec<Schedule>,
 }

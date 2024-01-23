@@ -38,7 +38,7 @@ impl Related<super::apothecary::Entity> for Entity {
     }
 
     fn via() -> Option<RelationDef> {
-        Some(super::apothecary_user::Relation::User.def())
+        Some(super::apothecary_user::Relation::User.def().rev())
     }
 }
 

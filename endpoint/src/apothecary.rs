@@ -10,6 +10,7 @@ use dto::{
     medication::{MedicationSearch, MedicationSearchResultList},
     page::Page,
 };
+use entity::apothecary::ApothecaryWithSchedules;
 use service::apothecary::ApothecaryServiceError;
 
 use crate::appstate::AppState;
@@ -35,6 +36,9 @@ pub async fn get(
             .apothecary_service
             .get(None)
             .await
+            .map(|apothecary| {
+                apothecary.map(|p| ApothecaryDetail::from(ApothecaryWithSchedules::from(p)))
+            })
             .map_err(handle_apothecary_service_error)?
             .into(),
     ))
