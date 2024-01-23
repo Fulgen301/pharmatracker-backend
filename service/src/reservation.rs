@@ -20,6 +20,7 @@ use crate::page::{Page, PageError};
 pub enum ReservationServiceError {
     UserNotFound,
     MedicationNotFound,
+    ReservationNotFound,
     NotEnoughAvailable,
     Anyhow(anyhow::Error),
 }
@@ -47,6 +48,7 @@ impl Display for ReservationServiceError {
         match self {
             ReservationServiceError::UserNotFound => write!(f, "User not found"),
             ReservationServiceError::MedicationNotFound => write!(f, "Medication not found"),
+            ReservationServiceError::ReservationNotFound => write!(f, "Reservation not found"),
             ReservationServiceError::NotEnoughAvailable => write!(f, "Not enough available"),
             ReservationServiceError::Anyhow(e) => write!(f, "{}", e),
         }
@@ -178,5 +180,17 @@ impl ReservationService {
             schedules,
             medication,
         )))
+    }
+
+    pub async fn delete(&self, user_id: Uuid, id: Uuid) -> Result<(), ReservationServiceError> {
+        let reservation = entity::reservation::Entity::find_by_id(id)
+            .filter(entity::reservation::Column::UserId.eq(user_id))
+            .one(&self.db)
+            .await?
+            .ok_or(ReservationServiceError::ReservationNotFound)?;
+
+        reservation.delete(&self.db).await?;
+
+        Ok(())
     }
 }

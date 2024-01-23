@@ -1,5 +1,5 @@
 use axum::{
-    extract::State,
+    extract::{Path, State},
     http::StatusCode,
     response::{ErrorResponse, IntoResponse},
     Json,
@@ -10,14 +10,15 @@ use dto::{
     reservation::{MedicationReservation, MedicationReservationRequest},
 };
 use service::reservation::ReservationServiceError;
+use uuid::Uuid;
 
 use crate::{appstate::AppState, auth::Auth};
 
 fn handle_reservation_service_error(e: ReservationServiceError) -> impl IntoResponse {
     let (status, message) = match e {
-        ReservationServiceError::UserNotFound | ReservationServiceError::MedicationNotFound => {
-            (StatusCode::NOT_FOUND, e.to_string())
-        }
+        ReservationServiceError::UserNotFound
+        | ReservationServiceError::MedicationNotFound
+        | ReservationServiceError::ReservationNotFound => (StatusCode::NOT_FOUND, e.to_string()),
         ReservationServiceError::NotEnoughAvailable => (StatusCode::NOT_FOUND, e.to_string()),
         ReservationServiceError::Anyhow(e) => (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()),
     };
@@ -53,4 +54,18 @@ pub async fn post(
             .map_err(handle_reservation_service_error)?
             .into(),
     ))
+}
+
+pub async fn delete(
+    State(ref state): State<AppState>,
+    auth: Auth,
+    Path(id): Path<Uuid>,
+) -> Result<impl IntoResponse, ErrorResponse> {
+    state
+        .reservation_service
+        .delete(auth.user_id, id)
+        .await
+        .map_err(|e| handle_reservation_service_error(e))?;
+
+    Ok((StatusCode::NO_CONTENT, ()))
 }

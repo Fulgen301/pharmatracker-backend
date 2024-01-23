@@ -1,7 +1,7 @@
 use appstate::AppState;
 use axum::{
     extract::Request,
-    routing::{get, post},
+    routing::{delete, get, post},
     Router,
 };
 use hyper::body::Incoming;
@@ -43,7 +43,8 @@ fn create_router(appstate: AppState) -> Router {
                     get(apothecary::get_medications),
                 )
                 .route("/reservations", get(reservation::get))
-                .route("/reservations", post(reservation::post)),
+                .route("/reservations", post(reservation::post))
+                .route("/reservations/:id", delete(reservation::delete)),
         )
         .layer((
             TraceLayer::new_for_http(),
