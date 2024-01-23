@@ -23,7 +23,6 @@ pub enum MedicationQuantity {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MedicationQuantityLiquid {
-    pub r#type: String,
     pub quantity: f64,
     pub unit: String,
 }
@@ -31,16 +30,13 @@ pub struct MedicationQuantityLiquid {
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MedicationQuantityPackage {
-    pub r#type: String,
     pub quantity: u64,
     pub price: Decimal,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct MedicationQuantityUnknown {
-    pub r#type: String,
-}
+pub struct MedicationQuantityUnknown;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

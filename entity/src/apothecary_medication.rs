@@ -60,15 +60,12 @@ impl From<Model> for MedicationQuantity {
     fn from(medication: Model) -> Self {
         match medication.medication_quantity_type {
             QuantityType::Package => Self::Package(MedicationQuantityPackage {
-                r#type: "package".to_string(),
                 quantity: medication
                     .medication_quantity
                     .expect("Package quantity is missing") as _,
                 price: medication.medication_price,
             }),
-            QuantityType::Unknown => Self::Unknown(MedicationQuantityUnknown {
-                r#type: "unknown".to_string(),
-            }),
+            QuantityType::Unknown => Self::Unknown(MedicationQuantityUnknown),
         }
     }
 }
