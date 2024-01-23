@@ -149,9 +149,10 @@ impl ApothecaryService {
 
                 let apothecary = &apothecary_schedules.first().unwrap().0;
 
-                if (apothecary.longitude - search_dto.longitude).powf(2.0f32)
-                    + (apothecary.latitude - search_dto.latitude).powf(2.0f32)
-                    > (search_dto.max_distance.pow(2) as f32)
+                if apothecary_distance(
+                    (apothecary.latitude, apothecary.longitude),
+                    (search_dto.latitude, search_dto.longitude),
+                ) > search_dto.max_distance as f32
                 {
                     continue;
                 }
@@ -177,4 +178,25 @@ impl ApothecaryService {
 
         Ok(result)
     }
+}
+
+// https://github.com/geopy/geopy/blob/f495974c32a7a7b1eb433e7b8c87166e96375c32/geopy/distance.py#L463-L481
+fn apothecary_distance(a: (f32, f32), b: (f32, f32)) -> f32 {
+    const EARTH_RADIUS: f32 = 6371.009;
+
+    let (lat1, lng1) = (a.0.to_radians(), a.1.to_radians());
+    let (lat2, lng2) = (b.0.to_radians(), b.1.to_radians());
+
+    let (sin_lat1, cos_lat1) = (lat1.sin(), lat1.cos());
+    let (sin_lat2, cos_lat2) = (lat2.sin(), lat2.cos());
+
+    let delta_lng = lng2 - lng1;
+    let (cos_delta_lng, sin_delta_lng) = (delta_lng.cos(), delta_lng.sin());
+
+    let d = ((cos_lat2 * sin_delta_lng).powi(2)
+        + (cos_lat1 * sin_lat2 - sin_lat1 * cos_lat2 * cos_delta_lng).powi(2))
+    .sqrt()
+    .atan2(sin_lat1 * sin_lat2 + cos_lat1 * cos_lat2 * cos_delta_lng);
+
+    return EARTH_RADIUS * d;
 }

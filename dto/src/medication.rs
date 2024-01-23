@@ -46,8 +46,8 @@ pub struct MedicationQuantityUnknown {
 #[serde(rename_all = "camelCase")]
 pub struct MedicationSearch {
     pub name: String,
-    pub longitude: f32,
     pub latitude: f32,
+    pub longitude: f32,
     pub max_distance: u64,
 }
 

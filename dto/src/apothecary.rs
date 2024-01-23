@@ -8,8 +8,8 @@ use crate::schedule::Schedule;
 pub struct ApothecaryDetail {
     pub id: Uuid,
     pub name: String,
-    pub longitude: f32,
     pub latitude: f32,
+    pub longitude: f32,
     pub street: String,
     pub number: String,
     pub post_code: i32,

@@ -75,8 +75,8 @@ impl MigrationTrait for Migration {
             apothecary::ActiveModel {
                 id: Set(Uuid::new_v4()),
                 name: Set("St. Rudolf".to_owned()),
-                longitude: Set(16.3181194),
                 latitude: Set(48.1942566),
+                longitude: Set(16.3181194),
                 street: Set("Goldschlagstraße".to_owned()),
                 number: Set("105".to_owned()),
                 post_code: Set(1150),
@@ -89,8 +89,8 @@ impl MigrationTrait for Migration {
             apothecary::ActiveModel {
                 id: Set(Uuid::new_v4()),
                 name: Set("Zur goldenen Krone".to_owned()),
-                longitude: Set(16.372607040478915),
                 latitude: Set(48.20591348182142),
+                longitude: Set(16.372607040478915),
                 street: Set("Himmelpfortgasse".to_owned()),
                 number: Set("7".to_owned()),
                 post_code: Set(1010),

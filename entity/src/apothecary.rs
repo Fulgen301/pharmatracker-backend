@@ -6,8 +6,8 @@ pub struct Model {
     #[sea_orm(primary_key, auto_increment = false)]
     pub id: Uuid,
     pub name: String,
-    pub longitude: f32,
     pub latitude: f32,
+    pub longitude: f32,
     pub street: String,
     pub number: String,
     pub post_code: i32,
@@ -68,8 +68,8 @@ impl From<ApothecaryWithSchedules> for dto::apothecary::ApothecaryDetail {
         Self {
             id: apothecary.id,
             name: apothecary.name,
-            longitude: apothecary.longitude,
             latitude: apothecary.latitude,
+            longitude: apothecary.longitude,
             street: apothecary.street,
             number: apothecary.number,
             post_code: apothecary.post_code,
