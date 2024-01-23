@@ -22,6 +22,8 @@ pub enum ReservationStatus {
     Pending,
     #[sea_orm(string_value = "r")]
     Rejected,
+    #[sea_orm(string_value = "d")]
+    Done,
 }
 
 impl Display for ReservationStatus {
@@ -30,6 +32,7 @@ impl Display for ReservationStatus {
             ReservationStatus::Active => write!(f, "active"),
             ReservationStatus::Pending => write!(f, "pending"),
             ReservationStatus::Rejected => write!(f, "rejected"),
+            ReservationStatus::Done => write!(f, "done"),
         }
     }
 }
@@ -154,6 +157,7 @@ impl From<ReservationWithApothecaryAndMedication> for dto::reservation::Medicati
                         ReservationStatus::Active => MedicationReservationStatus::Active,
                         ReservationStatus::Pending => MedicationReservationStatus::Pending,
                         ReservationStatus::Rejected => MedicationReservationStatus::Rejected,
+                        ReservationStatus::Done => MedicationReservationStatus::Done,
                     }
                 }
             },

@@ -54,3 +54,24 @@ pub async fn get_medications(
 
     Ok(Json(result))
 }
+
+/*pub async fn get_medications_by_cda(
+    State(ref state): State<AppState>,
+    Query(search_dto): Query<MedicationSearchCda>,
+    cda: String,
+) -> Result<Json<Vec<MedicationSearchResultList>>, ErrorResponse> {
+    let result = state
+        .apothecary_service
+        .get_medications_by_cda(cda, search_dto)
+        .await
+        .map_err(handle_apothecary_service_error)?;
+
+    Ok(Json(result))
+}*/
+
+pub async fn get_medications_by_cda(
+    State(ref state): State<AppState>,
+    cda: String,
+) -> Result<Json<Vec<MedicationSearchResultList>>, ErrorResponse> {
+    Err((StatusCode::IM_A_TEAPOT, Json(RestError { message: cda })).into())
+}

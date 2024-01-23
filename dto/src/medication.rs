@@ -49,6 +49,14 @@ pub struct MedicationSearch {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct MedicationSearchCda {
+    pub latitude: f32,
+    pub longitude: f32,
+    pub max_distance: u64,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MedicationSearchResultList {
     pub medication: MedicationDetail,
     pub results: Vec<MedicationSearchResult>,

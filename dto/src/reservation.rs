@@ -12,6 +12,7 @@ use crate::{
 pub enum MedicationReservationStatus {
     Active,
     Pending,
+    Done,
     Rejected,
     Expired,
 }

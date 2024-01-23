@@ -2,7 +2,9 @@ use std::{collections::HashMap, fmt::Display};
 
 use anyhow::anyhow;
 use dto::{
-    medication::{MedicationSearch, MedicationSearchResult, MedicationSearchResultList},
+    medication::{
+        MedicationSearch, MedicationSearchCda, MedicationSearchResult, MedicationSearchResultList,
+    },
     page::Pageable,
 };
 use sea_orm::{
@@ -177,6 +179,14 @@ impl ApothecaryService {
         }
 
         Ok(result)
+    }
+
+    pub async fn get_medications_by_cda(
+        &self,
+        cda: String,
+        search_dto: MedicationSearchCda,
+    ) -> Result<Vec<MedicationSearchResultList>, ApothecaryServiceError> {
+        todo!()
     }
 }
 

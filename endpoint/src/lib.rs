@@ -42,6 +42,10 @@ fn create_router(appstate: AppState) -> Router {
                     "/apothecaries/medications",
                     get(apothecary::get_medications),
                 )
+                .route(
+                    "/apothecaries/medications",
+                    post(apothecary::get_medications_by_cda),
+                )
                 .route("/reservations", get(reservation::get))
                 .route("/reservations", post(reservation::post))
                 .route("/reservations/:id", delete(reservation::delete)),
