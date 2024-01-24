@@ -2,15 +2,20 @@ use std::{collections::HashMap, fmt::Display};
 
 use anyhow::anyhow;
 use dto::{
+    apothecary,
     medication::{
-        MedicationSearch, MedicationSearchCda, MedicationSearchResult, MedicationSearchResultList,
+        self, MedicationDetail, MedicationDetailWithQuantity, MedicationSearch,
+        MedicationSearchCda, MedicationSearchResult, MedicationSearchResultList,
     },
     page::Pageable,
 };
+use quick_xml::NsReader;
 use sea_orm::{
-    sea_query::{Expr, IntoCondition},
-    ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, JoinType, QueryFilter,
-    QuerySelect, RelationTrait, RuntimeErr,
+    sea_query::{
+        self, extension::postgres::PgExpr, Expr, Func, IntoCondition, LikeExpr, SimpleExpr,
+    },
+    ColumnTrait, Condition, DatabaseConnection, DbErr, EntityTrait, Iden, JoinType, ModelTrait,
+    QueryFilter, QuerySelect, RelationTrait, RuntimeErr, Values,
 };
 
 pub use entity::apothecary::Model as Apothecary;
@@ -19,6 +24,7 @@ use entity::{
     apothecary::{ApothecaryWithSchedules, Entity},
     apothecary_medication,
 };
+use tracing::{debug, field::debug, warn};
 use uuid::Uuid;
 
 use crate::page::{Page, PageError};
@@ -26,6 +32,7 @@ use crate::page::{Page, PageError};
 pub enum ApothecaryServiceError {
     NotFound,
     InvalidSortColumn(String),
+    InvalidXml,
     Anyhow(anyhow::Error),
 }
 
@@ -34,6 +41,7 @@ impl Display for ApothecaryServiceError {
         match self {
             ApothecaryServiceError::NotFound => write!(f, "Apothecary not found"),
             ApothecaryServiceError::InvalidSortColumn(e) => write!(f, "Invalid sort column: {}", e),
+            ApothecaryServiceError::InvalidXml => write!(f, "Invalid XML"),
             ApothecaryServiceError::Anyhow(e) => write!(f, "{}", e),
         }
     }
@@ -55,9 +63,19 @@ impl From<PageError> for ApothecaryServiceError {
     }
 }
 
+impl From<quick_xml::Error> for ApothecaryServiceError {
+    fn from(_: quick_xml::Error) -> Self {
+        Self::InvalidXml
+    }
+}
+
 pub struct ApothecaryService {
     db: DatabaseConnection,
 }
+
+#[derive(Iden)]
+#[iden = "UPPER"]
+struct Upper;
 
 impl ApothecaryService {
     pub fn new(db: DatabaseConnection) -> Self {
@@ -82,30 +100,6 @@ impl ApothecaryService {
         search_dto: MedicationSearch,
     ) -> Result<Vec<MedicationSearchResultList>, ApothecaryServiceError> {
         let apothecary_medications = entity::apothecary_medication::Entity::find()
-            .join(
-                JoinType::InnerJoin,
-                entity::apothecary_medication::Relation::Medication
-                    .def()
-                    .on_condition(|left, right| {
-                        Expr::col((left, entity::apothecary_medication::Column::MedicationId))
-                            .eq(Expr::col((right, entity::medication::Column::Id)))
-                            .into_condition()
-                    }),
-            )
-            .join(
-                JoinType::InnerJoin,
-                entity::apothecary_medication::Relation::Apothecary
-                    .def()
-                    .on_condition(|left, right| {
-                        Expr::col((left, entity::apothecary_medication::Column::ApothecaryId))
-                            .eq(Expr::col((right, entity::apothecary::Column::Id)))
-                            .into_condition()
-                    }),
-            )
-            .filter(
-                Condition::all().add(entity::medication::Column::Name.contains(search_dto.name)),
-            )
-            .distinct_on([entity::apothecary_medication::Column::MedicationId])
             .all(&self.db)
             .await?;
 
@@ -114,6 +108,10 @@ impl ApothecaryService {
         let mut hash = HashMap::<Uuid, Vec<apothecary_medication::Model>>::new();
 
         for apothecary_medication in apothecary_medications {
+            debug!(
+                "Apothecary medication: {:?}",
+                apothecary_medication.medication_id
+            );
             let medication_id = apothecary_medication.medication_id.clone();
             let mut list = hash
                 .get(&apothecary_medication.medication_id)
@@ -130,6 +128,16 @@ impl ApothecaryService {
                 .one(&self.db)
                 .await?
                 .ok_or(ApothecaryServiceError::NotFound)?;
+
+            debug!("Medication: {:?}", medication.name);
+
+            if !medication
+                .name
+                .to_uppercase()
+                .contains(search_dto.name.to_uppercase().as_str())
+            {
+                continue;
+            }
 
             let mut list = MedicationSearchResultList {
                 medication: medication.into(),
@@ -186,7 +194,65 @@ impl ApothecaryService {
         cda: String,
         search_dto: MedicationSearchCda,
     ) -> Result<Vec<MedicationSearchResultList>, ApothecaryServiceError> {
-        todo!()
+        warn!("content: {:?}", cda);
+        let re = regex::Regex::new(r"<name>(.+)</name>").unwrap();
+
+        match re.captures(&cda) {
+            Some(captures) => {
+                let (_, [name]) = captures.extract();
+                warn!("Regex: {:?}", name);
+                return self
+                    .get_medications(MedicationSearch {
+                        name: name.to_owned(),
+                        latitude: search_dto.latitude,
+                        longitude: search_dto.longitude,
+                        max_distance: search_dto.max_distance,
+                    })
+                    .await;
+            }
+            None => return Ok(vec![]),
+        }
+    }
+
+    pub async fn get_own_medications(
+        &self,
+        user_id: Uuid,
+    ) -> Result<Vec<MedicationDetailWithQuantity>, ApothecaryServiceError> {
+        let apothecary = entity::user::Entity::find_by_id(user_id)
+            .find_with_related(entity::apothecary::Entity)
+            .all(&self.db)
+            .await?
+            .pop()
+            .unwrap()
+            .1
+            .pop()
+            .unwrap();
+
+        debug("got apo");
+
+        let medications = apothecary
+            .find_related(entity::medication::Entity)
+            .all(&self.db)
+            .await?;
+
+        let mut result = vec![];
+
+        for medication in medications {
+            let apothecary_medication = entity::apothecary_medication::Entity::find_by_id((
+                apothecary.id.clone(),
+                medication.id.clone(),
+            ))
+            .one(&self.db)
+            .await?
+            .unwrap();
+
+            result.push(MedicationDetailWithQuantity {
+                medication: medication.into(),
+                quantity: apothecary_medication.into(),
+            });
+        }
+
+        Ok(result)
     }
 }
 

@@ -75,6 +75,17 @@ impl MigrationTrait for Migration {
         .await?
         .id;
 
+        let user_a_id = user::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            name: Set("John Doe".to_owned()),
+            email: Set("john@apo.com".to_owned()),
+            password: Set(hash_password("password").map_err(|e| DbErr::Migration(e.to_string()))?),
+            user_type: Set(user::UserType::Apothecary),
+        }
+        .insert(db)
+        .await?
+        .id;
+
         let apothecary_ids = [
             apothecary::ActiveModel {
                 id: Set(Uuid::new_v4()),
@@ -106,6 +117,14 @@ impl MigrationTrait for Migration {
             .id,
         ];
 
+        apothecary_user::ActiveModel {
+            id: Set(Uuid::new_v4()),
+            apothecary_id: Set(apothecary_ids[0]),
+            user_id: Set(user_a_id),
+        }
+        .insert(db)
+        .await?;
+
         let medication_id = medication::ActiveModel {
             id: Set(Uuid::new_v4()),
             name: Set("Ibuprofen".to_owned()),
@@ -126,11 +145,21 @@ impl MigrationTrait for Migration {
 
         let medication_id = medication::ActiveModel {
             id: Set(Uuid::new_v4()),
-            name: Set("Paracetamol".to_owned()),
+            name: Set("Oleovit D3 TR".to_owned()),
         }
         .insert(db)
         .await?
         .id;
+
+        apothecary_medication::ActiveModel {
+            apothecary_id: Set(apothecary_ids[0]),
+            medication_id: Set(medication_id),
+            medication_quantity_type: Set(apothecary_medication::QuantityType::Package),
+            medication_quantity: Set(Some(1)),
+            medication_price: Set(Decimal::new(799, 2)),
+        }
+        .insert(db)
+        .await?;
 
         apothecary_medication::ActiveModel {
             apothecary_id: Set(apothecary_ids[1]),
@@ -138,7 +167,9 @@ impl MigrationTrait for Migration {
             medication_quantity_type: Set(apothecary_medication::QuantityType::Package),
             medication_quantity: Set(Some(3)),
             medication_price: Set(Decimal::new(899, 2)),
-        };
+        }
+        .insert(db)
+        .await?;
 
         let schedules = [
             (Weekday::Monday, "08:00", "18:00"),

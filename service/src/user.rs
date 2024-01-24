@@ -14,6 +14,7 @@ use uuid::Uuid;
 pub enum UserServiceError {
     InvalidCredentials,
     UserAlreadyExists,
+    UserNotFound,
     Anyhow(anyhow::Error),
 }
 
@@ -34,6 +35,7 @@ impl Display for UserServiceError {
         match self {
             UserServiceError::InvalidCredentials => write!(f, "Invalid credentials"),
             UserServiceError::UserAlreadyExists => write!(f, "User already exists"),
+            UserServiceError::UserNotFound => write!(f, "User not found"),
             UserServiceError::Anyhow(e) => write!(f, "{}", e),
         }
     }
@@ -48,8 +50,11 @@ impl UserService {
         Self { db }
     }
 
-    pub async fn get_by_id(&self, id: Uuid) -> Result<Option<User>, UserServiceError> {
-        Ok(Entity::find_by_id(id).one(&self.db).await?)
+    pub async fn get_by_id(&self, id: Uuid) -> Result<User, UserServiceError> {
+        Ok(Entity::find_by_id(id)
+            .one(&self.db)
+            .await?
+            .ok_or(UserServiceError::UserNotFound)?)
     }
 
     pub async fn login(&self, user_login: dto::user::UserLogin) -> Result<User, UserServiceError> {

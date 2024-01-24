@@ -6,11 +6,12 @@ use axum::{
     Json,
 };
 use service::user::UserServiceError;
+use tracing::debug;
 
-use crate::appstate::AppState;
+use crate::{appstate::AppState, auth::Auth};
 use dto::{
     error::RestError,
-    user::{UserLogin, UserRegistration},
+    user::{User, UserLogin, UserRegistration},
 };
 
 fn handle_user_service_error(error: UserServiceError) -> Response {
@@ -21,6 +22,7 @@ fn handle_user_service_error(error: UserServiceError) -> Response {
         UserServiceError::UserAlreadyExists => {
             (axum::http::StatusCode::CONFLICT, error.to_string())
         }
+        UserServiceError::UserNotFound => (axum::http::StatusCode::NOT_FOUND, error.to_string()),
         UserServiceError::Anyhow(e) => {
             tracing::error!("Error: {}", e);
             (axum::http::StatusCode::INTERNAL_SERVER_ERROR, String::new())
@@ -34,6 +36,8 @@ pub async fn login(
     State(ref state): State<AppState>,
     Json(user_login): Json<UserLogin>,
 ) -> Result<impl IntoResponse, ErrorResponse> {
+    debug!("Login: {:?}", user_login);
+
     let user = state
         .user_service
         .login(user_login)
@@ -72,4 +76,17 @@ pub async fn register(
             })?
         ),
     ))
+}
+
+pub async fn me(
+    State(ref state): State<AppState>,
+    auth: Auth,
+) -> Result<Json<User>, ErrorResponse> {
+    let user = state
+        .user_service
+        .get_by_id(auth.user_id)
+        .await
+        .map_err(handle_user_service_error)?;
+
+    Ok(Json(user.into()))
 }

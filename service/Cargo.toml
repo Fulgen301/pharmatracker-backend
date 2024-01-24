@@ -10,6 +10,8 @@ argon2.workspace = true
 dto = { path = "../dto" }
 entity = { path = "../entity" }
 jsonwebtoken.workspace = true
+quick-xml = { version = "0.31.0", features = ["tokio", "async-tokio"] }
+regex = "1.10.3"
 sea-orm.workspace = true
 serde.workspace = true
 settings = { path = "../settings" }

@@ -7,18 +7,22 @@ use axum::{
 use dto::{
     apothecary::ApothecaryDetail,
     error::RestError,
-    medication::{MedicationSearch, MedicationSearchResultList},
+    medication::{
+        MedicationDetailWithQuantity, MedicationSearch, MedicationSearchCda,
+        MedicationSearchResultList,
+    },
     page::Page,
 };
 use entity::apothecary::ApothecaryWithSchedules;
 use service::apothecary::ApothecaryServiceError;
 
-use crate::appstate::AppState;
+use crate::{appstate::AppState, auth::Auth};
 
 fn handle_apothecary_service_error(error: ApothecaryServiceError) -> Response {
     let (status_code, message) = match error {
         ApothecaryServiceError::NotFound => (StatusCode::NOT_FOUND, error.to_string()),
         ApothecaryServiceError::InvalidSortColumn(e) => (StatusCode::BAD_REQUEST, e),
+        ApothecaryServiceError::InvalidXml => (StatusCode::BAD_REQUEST, error.to_string()),
         ApothecaryServiceError::Anyhow(e) => {
             tracing::error!("Error: {}", e);
             (StatusCode::INTERNAL_SERVER_ERROR, String::new())
@@ -55,7 +59,20 @@ pub async fn get_medications(
     Ok(Json(result))
 }
 
-/*pub async fn get_medications_by_cda(
+pub async fn get_own_medications(
+    State(ref state): State<AppState>,
+    auth: Auth,
+) -> Result<Json<Vec<MedicationDetailWithQuantity>>, ErrorResponse> {
+    let result = state
+        .apothecary_service
+        .get_own_medications(auth.user_id)
+        .await
+        .map_err(handle_apothecary_service_error)?;
+
+    Ok(Json(result))
+}
+
+pub async fn get_medications_by_cda(
     State(ref state): State<AppState>,
     Query(search_dto): Query<MedicationSearchCda>,
     cda: String,
@@ -67,11 +84,4 @@ pub async fn get_medications(
         .map_err(handle_apothecary_service_error)?;
 
     Ok(Json(result))
-}*/
-
-pub async fn get_medications_by_cda(
-    State(ref state): State<AppState>,
-    cda: String,
-) -> Result<Json<Vec<MedicationSearchResultList>>, ErrorResponse> {
-    Err((StatusCode::IM_A_TEAPOT, Json(RestError { message: cda })).into())
 }

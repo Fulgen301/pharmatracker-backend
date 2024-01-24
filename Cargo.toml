@@ -29,6 +29,7 @@ tokio.workspace = true
 tracing.workspace = true
 tracing-subscriber = { version = "0.3.18", features = ["env-filter"] }
 console-subscriber = "0.2.0"
+regex = "1.10.3"
 
 [features]
 tracing = ["tokio/tracing"]

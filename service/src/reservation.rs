@@ -8,7 +8,7 @@ use sea_orm::{
     Set,
 };
 use std::fmt::Display;
-use time::Duration;
+use time::{Duration, OffsetDateTime, PrimitiveDateTime};
 use uuid::Uuid;
 
 pub use entity::apothecary::Model as Apothecary;
@@ -122,6 +122,9 @@ impl ReservationService {
                     return Err(ReservationServiceError::NotEnoughAvailable);
                 }
 
+                let now = OffsetDateTime::now_utc();
+                let now = PrimitiveDateTime::new(now.date(), now.time());
+
                 entity::reservation::ActiveModel {
                     id: Set(Uuid::new_v4()),
                     apothecary_id: Set(request.apothecary_id),
@@ -131,11 +134,9 @@ impl ReservationService {
                     quantity: Set(Some(package.quantity as _)),
                     price: Set(apothecary_medicine.medication_price),
                     status: Set(entity::reservation::ReservationStatus::Active),
-                    start_date_time: Set(Some(request.start_date_time)),
+                    start_date_time: Set(Some(now)),
                     end_date_time: Set(Some(
-                        request
-                            .start_date_time
-                            .checked_add(Duration::minutes(30))
+                        now.checked_add(Duration::minutes(30))
                             .ok_or(anyhow!("Failed to add 30min".to_owned()))?,
                     )),
                 }

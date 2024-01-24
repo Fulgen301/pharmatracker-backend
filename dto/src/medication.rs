@@ -22,6 +22,15 @@ pub enum MedicationQuantity {
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
+pub struct MedicationDetailWithQuantity {
+    #[serde(flatten)]
+    pub medication: MedicationDetail,
+
+    pub quantity: MedicationQuantity,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "camelCase")]
 pub struct MedicationQuantityLiquid {
     pub quantity: f64,
     pub unit: String,

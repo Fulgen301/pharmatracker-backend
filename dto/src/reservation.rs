@@ -23,8 +23,6 @@ pub struct MedicationReservationRequest {
     pub apothecary_id: Uuid,
     pub medication_id: Uuid,
     pub quantity: MedicationQuantity,
-
-    pub start_date_time: PrimitiveDateTime,
 }
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
